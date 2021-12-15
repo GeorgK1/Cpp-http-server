@@ -12,31 +12,29 @@ class server
 {
 public:
 	int port;
-	std::vector<char> vBuffer;
+
 	boost::system::error_code ec;
 	std::string url = "http://www.example.org/index.asp";
-	std::string requestString = std::format("HTTP / 1.1 301 Moved Permanently\n\nLocation: {}", url);
-	
-		
+	std::string requestString = std::format(
+		"HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!");
 
-	auto getResponse(boost::asio::ip::tcp::socket& socket, std::string data, std::size_t size)
+
+	void getResponse(boost::asio::ip::tcp::socket& socket)
 	{
 		namespace http = boost::beast::http;
+		std::cout << requestString;
 
-		http::response<http::string_body> res;
+		std::vector buffer(requestString.size(), requestString.data());
 
 
-		read(socket, boost::asio::buffer(data, size));
+		std::string stringData(buffer[0]);
 
-		return res;
+		std::cout << stringData;
+		std::cout << "buffer says";
+
+		read(socket, boost::asio::buffer(buffer));
 	}
 
-	void makeRequest(boost::asio::ip::tcp::endpoint endpoint)
-	{
-		std::cout << "Request: " << requestString << "\n";
-
-		write(socket, boost::asio::buffer(requestString.data(), requestString.size()), ec);
-	}
 
 	void createServer()
 	{
@@ -44,8 +42,6 @@ public:
 
 		io_context context;
 
-
-		std::uint32_t size;
 		for (;;)
 		{
 			ip::tcp::socket socket(context);
@@ -61,14 +57,13 @@ public:
 			std::cout << "Connected! \n";
 
 			{
-				makeRequest(endpoint);
+				std::cout << "Request: " << requestString << "\n";
+
+				write(socket, buffer(requestString.data(), requestString.size()), ec);
 
 
-				auto response = getResponse(socket, requestString.data(), requestString.size());
+				getResponse(socket);
 
-				std::cout << "Response body length :  " << response.body().size() << std::endl;
-				std::cout << "Response headers  :  " << response.base() << std::endl;
-				std::cout << "Response body : " << std::quoted(response.body()) << std::endl;
 
 				if (ec)
 				{
